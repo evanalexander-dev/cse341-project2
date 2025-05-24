@@ -1,0 +1,406 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Bugs API",
+    "description": "Bugs API",
+    "version": "1.0.0"
+  },
+  "host": "cse341-project2-h9qe.onrender.com",
+  "basePath": "/",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Hello World"
+        ],
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/bugs/": {
+      "get": {
+        "tags": [
+          "Bugs"
+        ],
+        "summary": "Get all bugs",
+        "description": "Retrieve all bugs.",
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved bugs",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Bug"
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "400": {
+            "description": "Error retrieving bugs",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Error message"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Bugs"
+        ],
+        "summary": "Create a new bug",
+        "description": "Create a new bug.",
+        "parameters": [
+          {
+            "name": "obj",
+            "in": "body",
+            "description": "Bug information",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "example": "Login button not responding on mobile devices"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Users are unable to click the login button on iOS Safari. Button appears clickable but no action occurs when tapped."
+                },
+                "severity": {
+                  "type": "string",
+                  "example": "High"
+                },
+                "priority": {
+                  "type": "string",
+                  "example": "Medium"
+                },
+                "status": {
+                  "type": "string",
+                  "example": "Open"
+                },
+                "assignedDeveloper": {
+                  "type": "string",
+                  "example": "jane.smith@company.com"
+                },
+                "reporter": {
+                  "type": "string",
+                  "example": "john.doe@company.com"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Bug successfully created"
+          },
+          "412": {
+            "description": "Validation failed",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Validation failed"
+                },
+                "data": {
+                  "type": "string",
+                  "example": "Validation error details"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "Server error while creating bug",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while creating the bug."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bugs/{id}": {
+      "get": {
+        "tags": [
+          "Bugs"
+        ],
+        "summary": "Get bug by ID",
+        "description": "Retrieve a specific bug by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "ID of the bug",
+            "example": "507f1f77bcf86cd799439011"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved bug",
+            "schema": {
+              "$ref": "#/components/schemas/Bug"
+            }
+          },
+          "400": {
+            "description": "Error retrieving bug",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Error message"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Bugs"
+        ],
+        "summary": "Update bug by ID",
+        "description": "Update an existing bug by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "ID of the bug to update",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          {
+            "name": "obj",
+            "in": "body",
+            "description": "Bug information",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "example": "Login button not responding on mobile devices"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Users are unable to click the login button on iOS Safari. Button appears clickable but no action occurs when tapped."
+                },
+                "severity": {
+                  "type": "string",
+                  "example": "High"
+                },
+                "priority": {
+                  "type": "string",
+                  "example": "Medium"
+                },
+                "status": {
+                  "type": "string",
+                  "example": "Open"
+                },
+                "assignedDeveloper": {
+                  "type": "string",
+                  "example": "jane.smith@company.com"
+                },
+                "reporter": {
+                  "type": "string",
+                  "example": "john.doe@company.com"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Bug successfully updated"
+          },
+          "400": {
+            "description": "Invalid bug ID format",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Must use a valid bug id to update a bug."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "412": {
+            "description": "Validation failed",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Validation failed"
+                },
+                "data": {
+                  "type": "string",
+                  "example": "Validation error details"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "Server error while updating bug",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while updating the bug."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Bugs"
+        ],
+        "summary": "Delete bug by ID",
+        "description": "Delete a bug by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "ID of the bug to delete",
+            "example": "507f1f77bcf86cd799439011"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Bug successfully deleted"
+          },
+          "400": {
+            "description": "Invalid bug ID format",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Must use a valid bug id to delete a bug."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "Server error while deleting bug",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while deleting the bug."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Bug": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "title": {
+            "type": "string",
+            "example": "Login button not responding on mobile devices"
+          },
+          "description": {
+            "type": "string",
+            "example": "Users are unable to click the login button on iOS Safari. Button appears clickable but no action occurs when tapped."
+          },
+          "severity": {
+            "type": "string",
+            "example": "High"
+          },
+          "priority": {
+            "type": "string",
+            "example": "Medium"
+          },
+          "status": {
+            "type": "string",
+            "example": "Open"
+          },
+          "assignedDeveloper": {
+            "type": "string",
+            "example": "jane.smith@example.com"
+          },
+          "reporter": {
+            "type": "string",
+            "example": "john.doe@example.com"
+          }
+        }
+      }
+    }
+  }
+}
