@@ -15,19 +15,19 @@ controller.getAll = async (req, res) => {
             }
         ]
     }*/
-    /*#swagger.responses[400] = {
-        description: 'Error retrieving bugs',
+    /*#swagger.responses[500] = {
+        description: 'Internal server error',
         schema: { 
-            message: 'Error message'
+            error: 'An error occurred while retrieving bugs.'
         }
     }*/
-    const result = await mongodb.getDb().db().collection('bugs').find();
-    result.toArray().then((bugs, err) => {
-        if (err) {
-            res.status(400).json({ message: err });
-        }
+    try {
+        const result = await mongodb.getDb().db().collection('bugs').find();
+        const bugs = await result.toArray();
         res.json(bugs);
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while retrieving bugs.' });
+    }
 };
 
 controller.getOne = async (req, res) => {
@@ -46,22 +46,40 @@ controller.getOne = async (req, res) => {
         }
     }*/
     /*#swagger.responses[400] = {
-        description: 'Error retrieving bug',
+        description: 'Invalid bug ID format',
         schema: { 
-            message: 'Error message'
+            error: 'Must use a valid bug id to find a bug.'
         }
     }*/
-    if (!ObjectId.isValid(req.params.id)) {
-        res.status(400).json('Must use a valid bug id to find a bug.');
-    }
-    const bugId = new ObjectId(req.params.id);
-    const result = await mongodb.getDb().db().collection('bugs').find({ _id: bugId });
-    result.toArray().then((bugs, err) => {
-        if (err) {
-            res.status(400).json({ message: err });
+    /*#swagger.responses[404] = {
+        description: 'Bug not found',
+        schema: { 
+            error: 'Bug not found.'
         }
+    }*/
+    /*#swagger.responses[500] = {
+        description: 'Internal server error',
+        schema: { 
+            error: 'An error occurred while retrieving the bug.'
+        }
+    }*/
+    try {
+        if (!ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Must use a valid bug id to find a bug.' });
+        }
+        
+        const bugId = new ObjectId(req.params.id);
+        const result = await mongodb.getDb().db().collection('bugs').find({ _id: bugId });
+        const bugs = await result.toArray();
+        
+        if (bugs.length === 0) {
+            return res.status(404).json({ error: 'Bug not found.' });
+        }
+        
         res.json(bugs[0]);
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while retrieving the bug.' });
+    }
 };
 
 controller.create = async (req, res) => {
@@ -83,38 +101,48 @@ controller.create = async (req, res) => {
         }
     }*/
     /*#swagger.responses[201] = {
-        description: 'Bug successfully created'
+        description: 'Bug successfully created',
+        schema: {
+            success: true,
+            id: 'Generated bug ID'
+        }
     }*/
-    /*#swagger.responses[412] = {
-        description: 'Validation failed',
+    /*#swagger.responses[400] = {
+        description: 'Bad request - missing required fields',
         schema: { 
-            success: false,
-            message: 'Validation failed',
-            data: 'Validation error details'
+            error: 'Missing required fields'
         }
     }*/
     /*#swagger.responses[500] = {
-        description: 'Server error while creating bug',
+        description: 'Internal server error',
         schema: { 
             error: 'An error occurred while creating the bug.'
         }
     }*/
-    const bug = {
-        title: req.body.title,
-        description: req.body.description,
-        severity: req.body.severity,
-        priority: req.body.priority,
-        status: req.body.status,
-        assignedDeveloper: req.body.assignedDeveloper,
-        reporter: req.body.reporter
-    };
-    const result = await mongodb.getDb().db().collection('bugs').insertOne(bug);
-    if (result.acknowledged) {
-        res.status(201).send();
-    } else {
-        res.status(500).json(result.error || 'An error occurred while creating the bug.');
+    try {
+        const bug = {
+            title: req.body.title,
+            description: req.body.description,
+            severity: req.body.severity,
+            priority: req.body.priority,
+            status: req.body.status,
+            assignedDeveloper: req.body.assignedDeveloper,
+            reporter: req.body.reporter,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        
+        const result = await mongodb.getDb().db().collection('bugs').insertOne(bug);
+        
+        if (result.acknowledged) {
+            res.status(201).json({ success: true, id: result.insertedId });
+        } else {
+            res.status(500).json({ error: 'An error occurred while creating the bug.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while creating the bug.' });
     }
-}
+};
 
 controller.update = async (req, res) => {
     //#swagger.tags=['Bugs']
@@ -143,45 +171,55 @@ controller.update = async (req, res) => {
         description: 'Bug successfully updated'
     }*/
     /*#swagger.responses[400] = {
-        description: 'Invalid bug ID format',
+        description: 'Invalid bug ID format or missing required fields',
         schema: { 
-            error: 'Must use a valid bug id to update a bug.'
+            error: 'Error message'
         }
     }*/
-    /*#swagger.responses[412] = {
-        description: 'Validation failed',
+    /*#swagger.responses[404] = {
+        description: 'Bug not found',
         schema: { 
-            success: false,
-            message: 'Validation failed',
-            data: 'Validation error details'
+            error: 'Bug not found or no changes made.'
         }
     }*/
     /*#swagger.responses[500] = {
-        description: 'Server error while updating bug',
+        description: 'Internal server error',
         schema: { 
             error: 'An error occurred while updating the bug.'
         }
     }*/
-    if (!ObjectId.isValid(req.params.id)) {
-        res.status(400).json('Must use a valid bug id to update a bug.');
+    try {
+        if (!ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Must use a valid bug id to update a bug.' });
+        }
+        
+        const bugId = new ObjectId(req.params.id);
+        const bug = {
+            title: req.body.title,
+            description: req.body.description,
+            severity: req.body.severity,
+            priority: req.body.priority,
+            status: req.body.status,
+            assignedDeveloper: req.body.assignedDeveloper,
+            reporter: req.body.reporter,
+            updatedAt: new Date()
+        };
+        
+        const result = await mongodb.getDb().db().collection('bugs').replaceOne({ _id: bugId }, bug);
+        
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ error: 'Bug not found.' });
+        }
+        
+        if (result.modifiedCount > 0) {
+            res.status(204).send();
+        } else {
+            res.status(404).json({ error: 'Bug not found or no changes made.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while updating the bug.' });
     }
-    const bugId = new ObjectId(req.params.id);
-    const bug = {
-        title: req.body.title,
-        description: req.body.description,
-        severity: req.body.severity,
-        priority: req.body.priority,
-        status: req.body.status,
-        assignedDeveloper: req.body.assignedDeveloper,
-        reporter: req.body.reporter
-    };
-    const result = await mongodb.getDb().db().collection('bugs').replaceOne({ _id: bugId }, bug);
-    if (result.modifiedCount > 0) {
-        res.status(204).send();
-    } else {
-        res.status(500).json(result.error || 'An error occurred while updating the bug.');
-    }
-}
+};
 
 controller.delete = async (req, res) => {
     //#swagger.tags=['Bugs']
@@ -201,22 +239,34 @@ controller.delete = async (req, res) => {
             error: 'Must use a valid bug id to delete a bug.'
         }
     }*/
+    /*#swagger.responses[404] = {
+        description: 'Bug not found',
+        schema: { 
+            error: 'Bug not found.'
+        }
+    }*/
     /*#swagger.responses[500] = {
-        description: 'Server error while deleting bug',
+        description: 'Internal server error',
         schema: { 
             error: 'An error occurred while deleting the bug.'
         }
     }*/
-    if (!ObjectId.isValid(req.params.id)) {
-        res.status(400).json('Must use a valid bug id to delete a bug.');
+    try {
+        if (!ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Must use a valid bug id to delete a bug.' });
+        }
+        
+        const bugId = new ObjectId(req.params.id);
+        const result = await mongodb.getDb().db().collection('bugs').deleteOne({ _id: bugId });
+        
+        if (result.deletedCount > 0) {
+            res.status(204).send();
+        } else {
+            res.status(404).json({ error: 'Bug not found.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while deleting the bug.' });
     }
-    const bugId = new ObjectId(req.params.id);
-    const result = await mongodb.getDb().db().collection('bugs').deleteOne({ _id: bugId }, true);
-    if (result.deletedCount > 0) {
-        res.status(204).send();
-    } else {
-        res.status(500).json(result.error || 'An error occurred while deleting the bug.');
-    }
-}
+};
 
 module.exports = controller;

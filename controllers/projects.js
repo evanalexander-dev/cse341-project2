@@ -15,19 +15,19 @@ controller.getAll = async (req, res) => {
             }
         ]
     }*/
-    /*#swagger.responses[400] = {
-        description: 'Error retrieving projects',
+    /*#swagger.responses[500] = {
+        description: 'Internal server error',
         schema: { 
-            message: 'Error message'
+            error: 'An error occurred while retrieving projects.'
         }
     }*/
-    const result = await mongodb.getDb().db().collection('projects').find();
-    result.toArray().then((projects, err) => {
-        if (err) {
-            res.status(400).json({ message: err });
-        }
+    try {
+        const result = await mongodb.getDb().db().collection('projects').find();
+        const projects = await result.toArray();
         res.json(projects);
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while retrieving projects.' });
+    }
 };
 
 controller.getOne = async (req, res) => {
@@ -46,22 +46,40 @@ controller.getOne = async (req, res) => {
         }
     }*/
     /*#swagger.responses[400] = {
-        description: 'Error retrieving project',
+        description: 'Invalid project ID format',
         schema: { 
-            message: 'Error message'
+            error: 'Must use a valid project id to find a project.'
         }
     }*/
-    if (!ObjectId.isValid(req.params.id)) {
-        res.status(400).json('Must use a valid project id to find a project.');
-    }
-    const projectId = new ObjectId(req.params.id);
-    const result = await mongodb.getDb().db().collection('projects').find({ _id: projectId });
-    result.toArray().then((projects, err) => {
-        if (err) {
-            res.status(400).json({ message: err });
+    /*#swagger.responses[404] = {
+        description: 'Project not found',
+        schema: { 
+            error: 'Project not found.'
         }
+    }*/
+    /*#swagger.responses[500] = {
+        description: 'Internal server error',
+        schema: { 
+            error: 'An error occurred while retrieving the project.'
+        }
+    }*/
+    try {
+        if (!ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Must use a valid project id to find a project.' });
+        }
+        
+        const projectId = new ObjectId(req.params.id);
+        const result = await mongodb.getDb().db().collection('projects').find({ _id: projectId });
+        const projects = await result.toArray();
+        
+        if (projects.length === 0) {
+            return res.status(404).json({ error: 'Project not found.' });
+        }
+        
         res.json(projects[0]);
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while retrieving the project.' });
+    }
 };
 
 controller.create = async (req, res) => {
@@ -83,38 +101,46 @@ controller.create = async (req, res) => {
         }
     }*/
     /*#swagger.responses[201] = {
-        description: 'Project successfully created'
+        description: 'Project successfully created',
+        schema: {
+            success: true,
+            id: 'Generated project ID'
+        }
     }*/
-    /*#swagger.responses[412] = {
-        description: 'Validation failed',
+    /*#swagger.responses[400] = {
+        description: 'Bad request - missing required fields',
         schema: { 
-            success: false,
-            message: 'Validation failed',
-            data: 'Validation error details'
+            error: 'Missing required fields'
         }
     }*/
     /*#swagger.responses[500] = {
-        description: 'Server error while creating project',
+        description: 'Internal server error',
         schema: { 
             error: 'An error occurred while creating the project.'
         }
     }*/
-    const project = {
-        name: req.body.name,
-        description: req.body.description,
-        teamMembers: req.body.teamMembers,
-        bugCount: req.body.bugCount,
-        deadline: req.body.deadline,
-        techStack: req.body.techStack,
-        status: req.body.status
-    };
-    const result = await mongodb.getDb().db().collection('projects').insertOne(project);
-    if (result.acknowledged) {
-        res.status(201).send();
-    } else {
-        res.status(500).json(result.error || 'An error occurred while creating the project.');
+    try {
+        const project = {
+            name: req.body.name,
+            description: req.body.description,
+            teamMembers: req.body.teamMembers || [],
+            bugCount: req.body.bugCount || 0,
+            deadline: req.body.deadline,
+            techStack: req.body.techStack || [],
+            status: req.body.status || 'Planning'
+        };
+        
+        const result = await mongodb.getDb().db().collection('projects').insertOne(project);
+        
+        if (result.acknowledged) {
+            res.status(201).json({ success: true, id: result.insertedId });
+        } else {
+            res.status(500).json({ error: 'An error occurred while creating the project.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while creating the project.' });
     }
-}
+};
 
 controller.update = async (req, res) => {
     //#swagger.tags=['Projects']
@@ -143,45 +169,54 @@ controller.update = async (req, res) => {
         description: 'Project successfully updated'
     }*/
     /*#swagger.responses[400] = {
-        description: 'Invalid project ID format',
+        description: 'Invalid project ID format or missing required fields',
         schema: { 
-            error: 'Must use a valid project id to update a project.'
+            error: 'Error message'
         }
     }*/
-    /*#swagger.responses[412] = {
-        description: 'Validation failed',
+    /*#swagger.responses[404] = {
+        description: 'Project not found',
         schema: { 
-            success: false,
-            message: 'Validation failed',
-            data: 'Validation error details'
+            error: 'Project not found or no changes made.'
         }
     }*/
     /*#swagger.responses[500] = {
-        description: 'Server error while updating project',
+        description: 'Internal server error',
         schema: { 
             error: 'An error occurred while updating the project.'
         }
     }*/
-    if (!ObjectId.isValid(req.params.id)) {
-        res.status(400).json('Must use a valid project id to update a project.');
+    try {
+        if (!ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Must use a valid project id to update a project.' });
+        }
+        
+        const projectId = new ObjectId(req.params.id);
+        const project = {
+            name: req.body.name,
+            description: req.body.description,
+            teamMembers: req.body.teamMembers || [],
+            bugCount: req.body.bugCount || 0,
+            deadline: req.body.deadline,
+            techStack: req.body.techStack || [],
+            status: req.body.status || 'Planning'
+        };
+        
+        const result = await mongodb.getDb().db().collection('projects').replaceOne({ _id: projectId }, project);
+        
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ error: 'Project not found.' });
+        }
+        
+        if (result.modifiedCount > 0) {
+            res.status(204).send();
+        } else {
+            res.status(404).json({ error: 'Project not found or no changes made.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while updating the project.' });
     }
-    const projectId = new ObjectId(req.params.id);
-    const project = {
-        name: req.body.name,
-        description: req.body.description,
-        teamMembers: req.body.teamMembers,
-        bugCount: req.body.bugCount,
-        deadline: req.body.deadline,
-        techStack: req.body.techStack,
-        status: req.body.status
-    };
-    const result = await mongodb.getDb().db().collection('projects').replaceOne({ _id: projectId }, project);
-    if (result.modifiedCount > 0) {
-        res.status(204).send();
-    } else {
-        res.status(500).json(result.error || 'An error occurred while updating the project.');
-    }
-}
+};
 
 controller.delete = async (req, res) => {
     //#swagger.tags=['Projects']
@@ -201,22 +236,34 @@ controller.delete = async (req, res) => {
             error: 'Must use a valid project id to delete a project.'
         }
     }*/
+    /*#swagger.responses[404] = {
+        description: 'Project not found',
+        schema: { 
+            error: 'Project not found.'
+        }
+    }*/
     /*#swagger.responses[500] = {
-        description: 'Server error while deleting project',
+        description: 'Internal server error',
         schema: { 
             error: 'An error occurred while deleting the project.'
         }
     }*/
-    if (!ObjectId.isValid(req.params.id)) {
-        res.status(400).json('Must use a valid project id to delete a project.');
+    try {
+        if (!ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Must use a valid project id to delete a project.' });
+        }
+        
+        const projectId = new ObjectId(req.params.id);
+        const result = await mongodb.getDb().db().collection('projects').deleteOne({ _id: projectId });
+        
+        if (result.deletedCount > 0) {
+            res.status(204).send();
+        } else {
+            res.status(404).json({ error: 'Project not found.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'An error occurred while deleting the project.' });
     }
-    const projectId = new ObjectId(req.params.id);
-    const result = await mongodb.getDb().db().collection('projects').deleteOne({ _id: projectId }, true);
-    if (result.deletedCount > 0) {
-        res.status(204).send();
-    } else {
-        res.status(500).json(result.error || 'An error occurred while deleting the project.');
-    }
-}
+};
 
 module.exports = controller;
