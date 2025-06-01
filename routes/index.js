@@ -1,9 +1,5 @@
 const router = require('express').Router();
-
-router.get('/', (req, res) => {
-    //#swagger.tags=['Hello World']
-    res.send('Hello, world!');
-});
+const passport = require('passport');
 
 router.use('/bugs', require('./bugs'));
 router.use('/projects', require('./projects'));

@@ -1,8 +1,8 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "Bugs API",
-    "description": "Bugs API",
+    "title": "Bug Tracking API",
+    "description": "Bug Tracking API",
     "version": "1.0.0"
   },
   "host": "cse341-project2-h9qe.onrender.com",
@@ -11,19 +11,6 @@
     "https"
   ],
   "paths": {
-    "/": {
-      "get": {
-        "tags": [
-          "Hello World"
-        ],
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/bugs/": {
       "get": {
         "tags": [
@@ -44,14 +31,14 @@
               }
             }
           },
-          "400": {
-            "description": "Error retrieving bugs",
+          "500": {
+            "description": "Internal server error",
             "schema": {
               "type": "object",
               "properties": {
-                "message": {
+                "error": {
                   "type": "string",
-                  "example": "Error message"
+                  "example": "An error occurred while retrieving bugs."
                 }
               },
               "xml": {
@@ -110,24 +97,17 @@
         ],
         "responses": {
           "201": {
-            "description": "Bug successfully created"
-          },
-          "412": {
-            "description": "Validation failed",
+            "description": "Bug successfully created",
             "schema": {
               "type": "object",
               "properties": {
                 "success": {
                   "type": "boolean",
-                  "example": false
+                  "example": true
                 },
-                "message": {
+                "id": {
                   "type": "string",
-                  "example": "Validation failed"
-                },
-                "data": {
-                  "type": "string",
-                  "example": "Validation error details"
+                  "example": "Generated bug ID"
                 }
               },
               "xml": {
@@ -135,8 +115,29 @@
               }
             }
           },
+          "400": {
+            "description": "Bad request - missing required fields",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Missing required fields"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "412": {
+            "description": "Precondition Failed"
+          },
           "500": {
-            "description": "Server error while creating bug",
+            "description": "Internal server error",
             "schema": {
               "type": "object",
               "properties": {
@@ -178,13 +179,43 @@
             }
           },
           "400": {
-            "description": "Error retrieving bug",
+            "description": "Invalid bug ID format",
             "schema": {
               "type": "object",
               "properties": {
-                "message": {
+                "error": {
                   "type": "string",
-                  "example": "Error message"
+                  "example": "Must use a valid bug id to find a bug."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "404": {
+            "description": "Bug not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Bug not found."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while retrieving the bug."
                 }
               },
               "xml": {
@@ -254,13 +285,31 @@
             "description": "Bug successfully updated"
           },
           "400": {
-            "description": "Invalid bug ID format",
+            "description": "Invalid bug ID format or missing required fields",
             "schema": {
               "type": "object",
               "properties": {
                 "error": {
                   "type": "string",
-                  "example": "Must use a valid bug id to update a bug."
+                  "example": "Error message"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Bug not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Bug not found or no changes made."
                 }
               },
               "xml": {
@@ -269,30 +318,10 @@
             }
           },
           "412": {
-            "description": "Validation failed",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "success": {
-                  "type": "boolean",
-                  "example": false
-                },
-                "message": {
-                  "type": "string",
-                  "example": "Validation failed"
-                },
-                "data": {
-                  "type": "string",
-                  "example": "Validation error details"
-                }
-              },
-              "xml": {
-                "name": "main"
-              }
-            }
+            "description": "Precondition Failed"
           },
           "500": {
-            "description": "Server error while updating bug",
+            "description": "Internal server error",
             "schema": {
               "type": "object",
               "properties": {
@@ -343,14 +372,455 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Bug not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Bug not found."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
           "500": {
-            "description": "Server error while deleting bug",
+            "description": "Internal server error",
             "schema": {
               "type": "object",
               "properties": {
                 "error": {
                   "type": "string",
                   "example": "An error occurred while deleting the bug."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get all projects",
+        "description": "Retrieve all projects.",
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved projects",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Project"
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while retrieving projects."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Create a new project",
+        "description": "Create a new project.",
+        "parameters": [
+          {
+            "name": "obj",
+            "in": "body",
+            "description": "Project information",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "E-Commerce Website"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Full-stack web application for online retail with user authentication and payment processing"
+                },
+                "teamMembers": {
+                  "type": "array",
+                  "example": [
+                    "john.doe@example.com",
+                    "jane.smith@example.com"
+                  ],
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "bugCount": {
+                  "type": "number",
+                  "example": 15
+                },
+                "deadline": {
+                  "type": "string",
+                  "example": "2024-12-31"
+                },
+                "techStack": {
+                  "type": "array",
+                  "example": [
+                    "Node.js",
+                    "React",
+                    "MongoDB"
+                  ],
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "status": {
+                  "type": "string",
+                  "example": "In Progress"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Project successfully created",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "id": {
+                  "type": "string",
+                  "example": "Generated project ID"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required fields",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Missing required fields"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "412": {
+            "description": "Precondition Failed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while creating the project."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{id}": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get project by ID",
+        "description": "Retrieve a specific project by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "ID of the project",
+            "example": "507f1f77bcf86cd799439011"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved project",
+            "schema": {
+              "$ref": "#/components/schemas/Project"
+            }
+          },
+          "400": {
+            "description": "Invalid project ID format",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Must use a valid project id to find a project."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Project not found."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while retrieving the project."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Update project by ID",
+        "description": "Update an existing project by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "ID of the project to update",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          {
+            "name": "obj",
+            "in": "body",
+            "description": "Project information",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "E-Commerce Website"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Full-stack web application for online retail with user authentication and payment processing"
+                },
+                "teamMembers": {
+                  "type": "array",
+                  "example": [
+                    "john.doe@example.com",
+                    "jane.smith@example.com"
+                  ],
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "bugCount": {
+                  "type": "number",
+                  "example": 15
+                },
+                "deadline": {
+                  "type": "string",
+                  "example": "2024-12-31"
+                },
+                "techStack": {
+                  "type": "array",
+                  "example": [
+                    "Node.js",
+                    "React",
+                    "MongoDB"
+                  ],
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "status": {
+                  "type": "string",
+                  "example": "In Progress"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Project successfully updated"
+          },
+          "400": {
+            "description": "Invalid project ID format or missing required fields",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Error message"
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Project not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Project not found or no changes made."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while updating the project."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Delete project by ID",
+        "description": "Delete a project by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "ID of the project to delete",
+            "example": "507f1f77bcf86cd799439011"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Project successfully deleted"
+          },
+          "400": {
+            "description": "Invalid project ID format",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Must use a valid project id to delete a project."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Project not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Project not found."
+                }
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An error occurred while deleting the project."
                 }
               },
               "xml": {
@@ -398,6 +868,50 @@
           "reporter": {
             "type": "string",
             "example": "john.doe@example.com"
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "name": {
+            "type": "string",
+            "example": "E-Commerce Website"
+          },
+          "description": {
+            "type": "string",
+            "example": "Full-stack web application for online retail with user authentication and payment processing"
+          },
+          "teamMembers": {
+            "type": "array",
+            "example": [
+              "john.doe@example.com",
+              "jane.smith@example.com"
+            ]
+          },
+          "bugCount": {
+            "type": "number",
+            "example": 15
+          },
+          "deadline": {
+            "type": "string",
+            "example": "2024-12-31"
+          },
+          "techStack": {
+            "type": "array",
+            "example": [
+              "Node.js",
+              "React",
+              "MongoDB"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "example": "In Progress"
           }
         }
       }
